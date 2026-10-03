@@ -1,0 +1,188 @@
+@page "/dashboard"
+@attribute [Authorize]
+@inject SystemApiClient SystemApi
+@inject UsersApiClient UsersApi
+@inject AuthenticationApiClient AuthenticationApi
+@inject BackofficeAuthenticationState AuthenticationState
+@inject NavigationManager Navigation
+@inject ApiRequestLog RequestLog
+
+<PageTitle>حساب کاربری | بلیتو</PageTitle>
+
+<section class="dashboard-page">
+    <div class="dashboard-alert">اطلاعات حساب کاربری شما کامل نیست. برای استفاده بهتر، اطلاعات خود را تکمیل کنید.</div>
+    <div class="dashboard-grid">
+        <aside class="profile-card modern-card">
+            @if (!string.IsNullOrWhiteSpace(currentUser?.Avatar))
+            {
+                <img class="avatar avatar-image" src="@currentUser.Avatar" alt="آواتار کاربر" />
+            }
+            else
+            {
+                <div class="avatar">☺</div>
+            }
+            <h2>@DisplayName</h2>
+            <small>حساب کاربری بلیتو</small>
+            <hr />
+            <NavLink href="/dashboard" Match="NavLinkMatch.All">◉ اطلاعات حساب کاربری</NavLink>
+            <NavLink href="/current-user">♧ سفرهای من</NavLink>
+            <NavLink href="/api-status">▣ پیگیری درخواست‌ها</NavLink>
+            <button class="logout-link" @onclick="LogoutAsync">خروج از حساب کاربری</button>
+        </aside>
+
+        <div class="profile-form modern-card">
+            <div class="section-heading"><span class="heading-line"></span><h1>ویرایش اطلاعات</h1></div>
+            @if (profile is not null)
+            {
+                <EditForm Model="profile" OnValidSubmit="SaveAsync">
+                    <div class="profile-fields">
+                        <div><label>نام</label><InputText class="modern-input" @bind-Value="profile.FirstName" /></div>
+                        <div><label>نام خانوادگی</label><InputText class="modern-input" @bind-Value="profile.LastName" /></div>
+                        <div><label>کد ملی</label><InputText class="modern-input" @bind-Value="profile.NationalCode" maxlength="10" dir="ltr" /></div>
+                        <div><label>جنسیت</label><InputSelect class="modern-input" @bind-Value="profile.Gender">
+                            <option value="">انتخاب کنید</option>
+                            <option value="مرد">مرد</option>
+                            <option value="زن">زن</option>
+                        </InputSelect></div>
+                        <div><label>شماره تماس</label><InputText class="modern-input" @bind-Value="profile.Mobile" readonly dir="ltr" /></div>
+                        <div><label>آواتار</label><InputFile class="modern-input file-input" OnChange="OnAvatarSelectedAsync" accept="image/png,image/jpeg,image/webp" /></div>
+                    </div>
+                    <div class="avatar-help">فرمت‌های مجاز: JPG، PNG یا WEBP — حداکثر ۲ مگابایت</div>
+                    @if (!string.IsNullOrWhiteSpace(message))
+                    {
+                        <div class="profile-message @(saved ? "success" : "error")">@message</div>
+                    }
+                    <div class="dashboard-actions">
+                        <button class="primary-button" type="submit" disabled="@saving">@(saving ? "در حال ذخیره..." : "ثبت اطلاعات")</button>
+                        <button class="secondary-button" type="button" @onclick="RefreshAsync">تازه‌سازی نشست</button>
+                    </div>
+                </EditForm>
+            }
+            else
+            {
+                <p>در حال دریافت اطلاعات کاربر...</p>
+            }
+        </div>
+    </div>
+    <div class="system-status @(apiOnline ? "online" : "offline")">@(apiOnline ? "API Online" : "API Offline")</div>
+    @if (problem is not null)
+    {
+        <ApiProblemView Problem="problem" />
+    }
+    <ApiInspector Request="RequestLog.LastRequest" />
+</section>
+
+@code {
+    private bool apiOnline;
+    private bool saving;
+    private bool saved;
+    private CurrentUserResponse? currentUser;
+    private ProfileForm? profile;
+    private ApiProblemDetails? problem;
+    private string? message;
+
+    private string DisplayName => string.IsNullOrWhiteSpace(currentUser?.DisplayName)
+        ? currentUser?.Mobile ?? "کاربر بلیتو"
+        : currentUser.DisplayName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckHealthAsync();
+        await LoadCurrentUserAsync();
+    }
+
+    private async Task CheckHealthAsync()
+    {
+        var response = await SystemApi.GetHealthAsync(CancellationToken.None);
+        apiOnline = response.Succeeded;
+        problem = response.Problem;
+    }
+
+    private async Task LoadCurrentUserAsync()
+    {
+        var response = await UsersApi.GetCurrentUserAsync(CancellationToken.None);
+        currentUser = response.Data;
+        problem = response.Problem;
+        if (currentUser is not null)
+        {
+            profile = new ProfileForm
+            {
+                FirstName = currentUser.FirstName ?? string.Empty,
+                LastName = currentUser.LastName ?? string.Empty,
+                NationalCode = currentUser.NationalCode ?? string.Empty,
+                Gender = currentUser.Gender ?? string.Empty,
+                Mobile = currentUser.Mobile,
+                Avatar = currentUser.Avatar
+            };
+        }
+    }
+
+    private async Task OnAvatarSelectedAsync(InputFileChangeEventArgs args)
+    {
+        var file = args.File;
+        if (file.Size > 2_000_000)
+        {
+            message = "حجم آواتار نباید بیشتر از ۲ مگابایت باشد.";
+            saved = false;
+            return;
+        }
+
+        await using var stream = file.OpenReadStream(2_000_000);
+        using var memory = new MemoryStream();
+        await stream.CopyToAsync(memory);
+        profile!.Avatar = $"data:{file.ContentType};base64,{Convert.ToBase64String(memory.ToArray())}";
+        message = "آواتار انتخاب شد؛ برای ذخیره روی ثبت اطلاعات بزنید.";
+        saved = true;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (profile is null) return;
+        saving = true;
+        message = null;
+        var response = await UsersApi.UpdateCurrentUserAsync(
+            new UpdateUserProfileRequest(profile.FirstName, profile.LastName, profile.NationalCode, profile.Gender, profile.Avatar),
+            CancellationToken.None);
+        problem = response.Problem;
+        if (response.Succeeded && response.Data is not null)
+        {
+            currentUser = response.Data;
+            message = "اطلاعات با موفقیت ذخیره شد.";
+            saved = true;
+        }
+        else
+        {
+            message = response.Problem?.Detail ?? "ذخیره اطلاعات انجام نشد.";
+            saved = false;
+        }
+        saving = false;
+    }
+
+    private async Task RefreshAsync()
+    {
+        var response = await AuthenticationApi.RefreshAsync(CancellationToken.None);
+        problem = response.Problem;
+        if (response.Succeeded && response.Data is not null)
+        {
+            AuthenticationState.SetAccessToken(response.Data.AccessToken);
+            await LoadCurrentUserAsync();
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthenticationApi.LogoutAsync(CancellationToken.None);
+        AuthenticationState.Clear();
+        Navigation.NavigateTo("/login");
+    }
+
+    private sealed class ProfileForm
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string NationalCode { get; set; } = string.Empty;
+        public string Gender { get; set; } = string.Empty;
+        public string Mobile { get; set; } = string.Empty;
+        public string? Avatar { get; set; }
+    }
+}

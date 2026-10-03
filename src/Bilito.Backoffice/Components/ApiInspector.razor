@@ -1,0 +1,21 @@
+@if (Request is not null)
+{
+    <section class="card mt-4">
+        <div class="card-body">
+            <h2 class="h5">Last API request</h2>
+            <div><strong>@Request.Method</strong> <code>@Request.Endpoint</code> — @Request.StatusCode</div>
+            @if (Request.Problem is not null)
+            {
+                <ApiProblemView Problem="Request.Problem" />
+            }
+            else if (!string.IsNullOrWhiteSpace(Request.ResponseBody))
+            {
+                <pre class="api-response">@Request.ResponseBody</pre>
+            }
+        </div>
+    </section>
+}
+
+@code {
+    [Parameter] public ApiRequestInfo? Request { get; set; }
+}

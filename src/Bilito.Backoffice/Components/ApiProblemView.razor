@@ -1,0 +1,27 @@
+@if (Problem is not null)
+{
+    <div class="alert alert-danger" role="alert">
+        <strong>@(Problem.Title ?? "Request failed")</strong>
+        @if (Problem.Status is not null)
+        {
+            <span>(@Problem.Status)</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(Problem.Detail))
+        {
+            <div>@Problem.Detail</div>
+        }
+        @if (Problem.Errors is not null)
+        {
+            <ul class="mb-0 mt-2">
+                @foreach (var error in Problem.Errors.SelectMany(item => item.Value.Select(message => $"{item.Key}: {message}")))
+                {
+                    <li>@error</li>
+                }
+            </ul>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public ApiProblemDetails? Problem { get; set; }
+}

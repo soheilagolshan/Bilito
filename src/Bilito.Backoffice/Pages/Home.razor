@@ -1,0 +1,24 @@
+@page "/"
+@inject NavigationManager Navigation
+
+<PageTitle>بلیتو | سفر آسان‌تر</PageTitle>
+
+<section class="landing-hero">
+    <div class="hero-copy">
+        <span class="eyebrow">سفر را ساده‌تر تجربه کن</span>
+        <h1>هر سفر، یک خاطره ماندگار</h1>
+        <p>بلیتو همراه مطمئن تو برای برنامه‌ریزی و مدیریت سفرهاست.</p>
+        <button class="primary-button" @onclick="OpenLogin">ورود یا ثبت‌نام</button>
+    </div>
+    <div class="hero-wing" aria-hidden="true"></div>
+</section>
+
+<section class="landing-content">
+    <div><span class="feature-icon">✓</span><h2>سفر مطمئن</h2><p>اطلاعات سفرهایت همیشه در دسترس توست.</p></div>
+    <div><span class="feature-icon">⌁</span><h2>مدیریت آسان</h2><p>با چند کلیک مسیر سفرت را دنبال کن.</p></div>
+    <div><span class="feature-icon">♧</span><h2>پشتیبانی همراه</h2><p>در تمام مراحل کنار تو هستیم.</p></div>
+</section>
+
+@code {
+    private void OpenLogin() => Navigation.NavigateTo("/login");
+}

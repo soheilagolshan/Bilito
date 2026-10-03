@@ -1,0 +1,86 @@
+@page "/login"
+@inject AuthenticationApiClient AuthenticationApi
+@inject BackofficeAuthenticationState AuthenticationState
+@inject NavigationManager Navigation
+@inject ApiRequestLog RequestLog
+
+<PageTitle>ورود یا ثبت‌نام | بلیتو</PageTitle>
+
+<section class="auth-page">
+    <div class="auth-card modern-card">
+        <span class="eyebrow">ورود به بلیتو</span>
+        <h1>ورود یا ثبت‌نام</h1>
+        <p class="muted">برای ورود، شماره موبایل خود را وارد کنید.</p>
+
+        <label class="field-label" for="mobile">شماره موبایل</label>
+        <input id="mobile" class="modern-input" type="tel" @bind="mobile" placeholder="۰۹۱۲۱۲۳۴۵۶۷" dir="ltr" />
+        <button class="primary-button full-width" @onclick="RequestOtpAsync" disabled="@busy">
+            @(busy && !otpRequested ? "در حال ارسال..." : "ارسال کد تأیید")
+        </button>
+
+        @if (request is not null && request.Data is not null)
+        {
+            <div class="otp-info">
+                <div>کد تأیید تا @request.Data.ExpiresInSeconds ثانیه معتبر است.</div>
+                <div>ارسال مجدد پس از @request.Data.ResendAfterSeconds ثانیه امکان‌پذیر است.</div>
+                @if (!string.IsNullOrWhiteSpace(request.Data.DevelopmentOtp))
+                {
+                    <div class="development-otp">Development OTP: <strong>@request.Data.DevelopmentOtp</strong></div>
+                }
+            </div>
+        }
+
+        @if (request?.Problem is not null)
+        {
+            <ApiProblemView Problem="request.Problem" />
+        }
+
+        @if (otpRequested)
+        {
+            <div class="otp-step">
+                <label class="field-label" for="otp">کد تأیید</label>
+                <input id="otp" class="modern-input otp-input" inputmode="numeric" maxlength="6" @bind="otp" placeholder="------" dir="ltr" />
+                <button class="primary-button full-width" @onclick="VerifyOtpAsync" disabled="@busy">
+                    @(busy ? "در حال بررسی..." : "تأیید و ورود")
+                </button>
+            </div>
+        }
+
+        @if (verify?.Problem is not null)
+        {
+            <ApiProblemView Problem="verify.Problem" />
+        }
+
+        <ApiInspector Request="RequestLog.LastRequest" />
+    </div>
+</section>
+
+@code {
+    private string mobile = string.Empty;
+    private string otp = string.Empty;
+    private bool otpRequested;
+    private bool busy;
+    private ApiResponse<RequestOtpResponse>? request;
+    private ApiResponse<AuthenticationResponse>? verify;
+
+    private async Task RequestOtpAsync()
+    {
+        busy = true;
+        request = await AuthenticationApi.RequestOtpAsync(mobile, CancellationToken.None);
+        otpRequested = request.Succeeded;
+        busy = false;
+    }
+
+    private async Task VerifyOtpAsync()
+    {
+        busy = true;
+        verify = await AuthenticationApi.VerifyOtpAsync(mobile, otp, CancellationToken.None);
+        if (verify.Succeeded && verify.Data is not null)
+        {
+            AuthenticationState.SetAccessToken(verify.Data.AccessToken);
+            Navigation.NavigateTo("/dashboard");
+        }
+
+        busy = false;
+    }
+}

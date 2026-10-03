@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\Bilito.Identity.Domain\Bilito.Identity.Domain.csproj" />
+    <ProjectReference Include="..\Bilito.Identity.Contracts\Bilito.Identity.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

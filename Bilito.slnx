@@ -1,0 +1,20 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Bilito.Api/Bilito.Api.csproj" />
+    <Project Path="src/Bilito.Backoffice/Bilito.Backoffice.csproj" />
+    <Project Path="src/Bilito.Database/Bilito.Database.csproj" />
+    <Project Path="src/Bilito.SharedKernel/Bilito.SharedKernel.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/Bilito.Identity.Application/Bilito.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/Bilito.Identity.Contracts/Bilito.Identity.Contracts.csproj" />
+    <Project Path="src/Modules/Identity/Bilito.Identity.Domain/Bilito.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/Bilito.Identity.Infrastructure/Bilito.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Bilito.ArchitectureTests/Bilito.ArchitectureTests.csproj" />
+    <Project Path="tests/Bilito.IntegrationTests/Bilito.IntegrationTests.csproj" />
+    <Project Path="tests/Bilito.UnitTests/Bilito.UnitTests.csproj" />
+  </Folder>
+</Solution>

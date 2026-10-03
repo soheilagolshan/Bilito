@@ -1,0 +1,35 @@
+@page "/current-user"
+@attribute [Authorize]
+@inject UsersApiClient UsersApi
+@inject ApiRequestLog RequestLog
+
+<PageTitle>Current User | Bilito Backoffice</PageTitle>
+<h1>Current user</h1>
+
+@if (user is not null)
+{
+    <dl class="row">
+        <dt class="col-sm-3">User ID</dt><dd class="col-sm-9"><code>@user.Id</code></dd>
+        <dt class="col-sm-3">Mobile</dt><dd class="col-sm-9">@user.Mobile</dd>
+        <dt class="col-sm-3">Mobile verified</dt><dd class="col-sm-9">@user.MobileVerified</dd>
+    </dl>
+}
+else if (problem is null)
+{
+    <p>Loading...</p>
+}
+
+<ApiProblemView Problem="problem" />
+<ApiInspector Request="RequestLog.LastRequest" />
+
+@code {
+    private CurrentUserResponse? user;
+    private ApiProblemDetails? problem;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await UsersApi.GetCurrentUserAsync(CancellationToken.None);
+        user = response.Data;
+        problem = response.Problem;
+    }
+}

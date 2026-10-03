@@ -1,0 +1,8 @@
+.backoffice-shell {
+    min-height: 100vh;
+    background: #fff;
+}
+
+.backoffice-main {
+    min-height: calc(100vh - 68px);
+}

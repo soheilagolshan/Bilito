@@ -1,0 +1,19 @@
+@page "/api-status"
+@inject SystemApiClient SystemApi
+@inject ApiRequestLog RequestLog
+
+<PageTitle>API Status | Bilito Backoffice</PageTitle>
+<h1>API status</h1>
+<button class="btn btn-primary" @onclick="CheckAsync">Check /health</button>
+@if (response is not null)
+{
+    <p class="mt-3">Status: <strong>@response.StatusCode</strong> — @(response.Succeeded ? "Online" : "Offline")</p>
+}
+<ApiProblemView Problem="response?.Problem" />
+<ApiInspector Request="RequestLog.LastRequest" />
+
+@code {
+    private ApiResponse<string>? response;
+
+    private async Task CheckAsync() => response = await SystemApi.GetHealthAsync(CancellationToken.None);
+}

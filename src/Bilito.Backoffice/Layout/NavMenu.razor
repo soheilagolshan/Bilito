@@ -1,0 +1,47 @@
+@inject AuthenticationApiClient AuthenticationApi
+@inject UsersApiClient UsersApi
+@inject BackofficeAuthenticationState AuthenticationState
+@inject NavigationManager Navigation
+
+<header class="site-header">
+    <div class="site-header-inner">
+        <a class="brand" href="/" aria-label="صفحه اصلی بلیتو">
+            <span>بلیتو</span><b>✦</b>
+        </a>
+        <nav class="site-nav">
+            <NavLink href="/" Match="NavLinkMatch.All">صفحه اصلی</NavLink>
+            <NavLink href="/api-status">بیمه مسافرتی</NavLink>
+            <NavLink href="/dashboard">سفرهای من</NavLink>
+            <NavLink href="/api-status">سایر موارد</NavLink>
+        </nav>
+        <div class="header-actions">
+            <span class="support">☎ پشتیبانی ۰۲۱-۴۵۶</span>
+            <AuthorizeView>
+                <Authorized>
+                    <NavLink class="header-user" href="/dashboard">@(user?.DisplayName ?? user?.Mobile ?? "حساب کاربری")</NavLink>
+                    <button class="header-button" @onclick="LogoutAsync">خروج از حساب</button>
+                </Authorized>
+                <NotAuthorized>
+                    <NavLink class="header-button" href="/login">ورود / ثبت‌نام</NavLink>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+</header>
+
+@code {
+    private CurrentUserResponse? user;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var response = await UsersApi.GetCurrentUserAsync(CancellationToken.None);
+        user = response.Data;
+    }
+
+    private async Task LogoutAsync()
+    {
+        await AuthenticationApi.LogoutAsync(CancellationToken.None);
+        AuthenticationState.Clear();
+        Navigation.NavigateTo("/login");
+    }
+}
