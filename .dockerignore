@@ -1,0 +1,15 @@
+.git
+.github
+.vs
+.vscode
+.idea
+**/bin
+**/obj
+**/TestResults
+coverage
+.env
+*.user
+*.suo
+README.md
+docs
+tests
